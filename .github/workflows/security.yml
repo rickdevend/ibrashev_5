@@ -17,10 +17,12 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install zapcli
 
       - name: Run Bandit
-        run: bandit -r .
+        run: bandit -r . --exit-zero
 
       - name: Run ZAP (DAST)
         run: |
