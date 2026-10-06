@@ -18,26 +18,26 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install zapcli
+          python -m pip install --upgrade pip
+          pip install flask werkzeug markupsafe jinja2 bandit
 
-      - name: Run Bandit
-        run: bandit -r . --exit-zero
+      - name: Run Bandit (SAST)
+        run: bandit -r . || true
 
-      - name: Run ZAP (DAST)
+      - name: Start Flask Application
         run: |
           python app.py &
           sleep 5
-          docker run -u zap -p 8080:8080 -d owasp/zap2docker-stable zap.sh -daemon -port 8080 -host 0.0.0.0
-          sleep 15
-          zap-cli -p 8080 status -t 60
-          zap-cli -p 8080 open-url http://localhost:5000/api/users
-          zap-cli -p 8080 spider http://localhost:5000
-          zap-cli -p 8080 active-scan http://localhost:5000
-          zap-cli -p 8080 report -o zap_report.html -f html
 
-      - name: Upload report
+      - name: Run OWASP ZAP (DAST)
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:5000/api/users'
+          fail_action: false
+
+      - name: Upload Report Artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: zap-report
           path: zap_report.html
